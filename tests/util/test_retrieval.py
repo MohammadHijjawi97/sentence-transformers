@@ -223,13 +223,23 @@ def test_community_detection_overlapping_communities():
     assert sorted([sorted(community) for community in result]) == sorted([sorted(community) for community in expected])
 
 
-def test_community_detection_accepts_1d_embedding():
-    """encode() of a single text returns a 1D vector; community_detection used to IndexError on normalize(dim=1)."""
+@pytest.mark.parametrize("as_numpy", [False, True])
+@pytest.mark.parametrize(("min_community_size", "expected"), [(1, [[0]]), (2, [])])
+def test_community_detection_accepts_1d_embedding(as_numpy, min_community_size, expected):
     embedding = torch.tensor([1.0, 0.0, 0.0])
+    if as_numpy:
+        embedding = embedding.numpy()
 
-    assert community_detection(embedding, min_community_size=2) == []
-    assert community_detection(embedding.numpy(), min_community_size=2) == []
-    assert community_detection(embedding, min_community_size=1) == [[0]]
+    assert community_detection(embedding, min_community_size=min_community_size) == expected
+
+
+@pytest.mark.parametrize("as_numpy", [False, True])
+def test_community_detection_empty_input(as_numpy):
+    embeddings = torch.tensor([])
+    if as_numpy:
+        embeddings = embeddings.numpy()
+
+    assert community_detection(embeddings, threshold=0, min_community_size=1) == []
 
 
 def test_community_detection_numpy_input():
